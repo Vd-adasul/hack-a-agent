@@ -1,0 +1,12 @@
+Use Case	Recommended Model	Why
+Customer Support	asi1	Adapts between fast triage and longer escalation paths
+Research and Analysis	asi1-ultra	Sustains multi-hop retrieval and synthesis with citations
+Code Generation	asi1	Handles routine coding tasks with the right depth
+Code Review and Audit	asi1-ultra	Deepest reasoning for catching subtle issues
+Content Creation	asi1	General drafting and editing
+Real-time Chat	asi1-mini	Low latency, short turn-taking
+Classification and Routing	asi1-mini	Cheap, fast, deterministic
+Voice Assistants	asi1-mini	Speed-critical, short outputs
+Long-running Agent Tasks	asi1-ultra	Largest tool budget, deepest plans
+Data Visualization	asi1	Generates charts and visual explanations
+Web3 Applications	asi1	Smart contract analysis with adaptive depth

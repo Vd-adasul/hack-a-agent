@@ -1,0 +1,628 @@
+# Growth Assistant - Database Schema
+
+## 1. users
+
+Stores user profile information.
+
+| Column        | Type      |
+| ------------- | --------- |
+| id            | UUID (PK) |
+| name          | VARCHAR   |
+| email         | VARCHAR   |
+| password_hash | TEXT      |
+| goals         | JSONB     |
+| interests     | JSONB     |
+| created_at    | TIMESTAMP |
+| updated_at    | TIMESTAMP |
+
+---
+
+## 2. audio_files
+
+Stores original audio recordings.
+
+| Column           | Type            |
+| ---------------- | --------------- |
+| id               | UUID (PK)       |
+| user_id          | UUID (FK users) |
+| file_url         | TEXT            |
+| duration_seconds | INTEGER         |
+| transcript_id    | UUID            |
+| created_at       | TIMESTAMP       |
+
+---
+
+## 3. transcripts
+
+Stores STT output.
+
+| Column          | Type            |
+| --------------- | --------------- |
+| id              | UUID (PK)       |
+| user_id         | UUID (FK users) |
+| audio_file_id   | UUID            |
+| transcript_text | TEXT            |
+| created_at      | TIMESTAMP       |
+
+Example:
+
+"Today I studied LangChain for 3 hours and promised Mom I would call her."
+
+---
+
+## 4. extracted_events
+
+Stores structured information extracted from transcripts.
+
+| Column        | Type      |
+| ------------- | --------- |
+| id            | UUID (PK) |
+| user_id       | UUID      |
+| transcript_id | UUID      |
+| event_type    | VARCHAR   |
+| content       | TEXT      |
+| metadata      | JSONB     |
+| created_at    | TIMESTAMP |
+
+event_type examples:
+
+PERSON
+TASK
+PROJECT
+GOAL
+PROMISE
+EMOTION
+HABIT
+
+Examples:
+
+PROMISE → Call Mom Sunday
+
+PROJECT → Growth Assistant
+
+TASK → Submit Hackathon
+
+---
+
+## 5. todos
+
+Stores user tasks.
+
+| Column        | Type      |
+| ------------- | --------- |
+| id            | UUID (PK) |
+| user_id       | UUID      |
+| transcript_id | UUID      |
+| title         | TEXT      |
+| description   | TEXT      |
+| due_date      | DATE      |
+| priority      | VARCHAR   |
+| status        | VARCHAR   |
+| created_at    | TIMESTAMP |
+| completed_at  | TIMESTAMP |
+
+status values:
+
+pending
+
+completed
+
+cancelled
+
+postponed
+
+priority values:
+
+low
+
+medium
+
+high
+
+---
+
+## 6. diary_entries
+
+Stores generated diary.
+
+| Column     | Type      |
+| ---------- | --------- |
+| id         | UUID (PK) |
+| user_id    | UUID      |
+| diary_date | DATE      |
+| content    | TEXT      |
+| confirmed  | BOOLEAN   |
+| created_at | TIMESTAMP |
+
+---
+
+## 7. time_blocks
+
+Stores 30-minute interval tracking.
+
+| Column     | Type      |
+| ---------- | --------- |
+| id         | UUID (PK) |
+| user_id    | UUID      |
+| block_date | DATE      |
+| start_time | TIME      |
+| end_time   | TIME      |
+| activity   | TEXT      |
+| category   | VARCHAR   |
+| importance | VARCHAR   |
+| urgency    | VARCHAR   |
+| created_at | TIMESTAMP |
+
+Example:
+
+2026-06-27
+
+09:00
+
+09:30
+
+Studying LangChain
+
+Career
+
+High
+
+Medium
+
+You will have up to 48 entries per day.
+
+---
+
+## 8. memories
+
+Stores searchable long-term memory.
+
+| Column      | Type      |
+| ----------- | --------- |
+| id          | UUID (PK) |
+| user_id     | UUID      |
+| memory_text | TEXT      |
+| embedding   | VECTOR    |
+| source_type | VARCHAR   |
+| source_id   | UUID      |
+| created_at  | TIMESTAMP |
+
+source_type:
+
+transcript
+
+todo
+
+diary
+
+event
+
+This table powers RAG.
+
+---
+
+## 9. weekly_reports
+
+Stores generated weekly summaries.
+
+| Column      | Type      |
+| ----------- | --------- |
+| id          | UUID      |
+| user_id     | UUID      |
+| week_start  | DATE      |
+| week_end    | DATE      |
+| report_text | TEXT      |
+| created_at  | TIMESTAMP |
+# API Design
+
+## Authentication
+
+POST /api/auth/register
+
+POST /api/auth/login
+
+GET /api/auth/me
+
+---
+
+## Audio Processing
+
+POST /api/audio/upload
+
+Input:
+audio file
+
+Output:
+audio_id
+
+Stores original audio.
+
+---
+
+POST /api/transcript/generate
+
+Input:
+
+{
+"audio_id": "..."
+}
+
+Output:
+
+{
+"transcript_id": "...",
+"text": "Today I studied..."
+}
+
+Runs FastWhisper.
+
+---
+
+## Event Extraction
+
+POST /api/events/extract
+
+Input:
+
+{
+"transcript_id": "..."
+}
+
+Output:
+
+{
+"tasks": [],
+"people": [],
+"projects": [],
+"promises": []
+}
+
+Runs LangChain extraction pipeline.
+
+Stores extracted_events.
+
+---
+
+## Todo Generation
+
+POST /api/todos/generate
+
+Input:
+
+{
+"transcript_id": "..."
+}
+
+Output:
+
+{
+"todos": [...]
+}
+
+---
+
+POST /api/todos/confirm
+
+Input:
+
+{
+"todos": [...]
+}
+
+Stores confirmed todos.
+
+---
+
+GET /api/todos
+
+Returns user todos.
+
+---
+
+PATCH /api/todos/:id
+
+Updates todo.
+
+---
+
+DELETE /api/todos/:id
+
+Deletes todo.
+
+---
+
+## Time Tracking
+
+POST /api/timeblocks
+
+Creates 30-minute block.
+
+---
+
+GET /api/timeblocks/day/:date
+
+Returns all 48 blocks.
+
+---
+
+GET /api/timeblocks/week
+
+Returns weekly blocks.
+
+---
+
+GET /api/timeblocks/month
+
+Returns monthly blocks.
+
+---
+
+## Diary
+
+POST /api/diary/generate
+
+Uses:
+
+Transcripts
+
+Time Blocks
+
+Todos
+
+Output:
+
+{
+"diary": "..."
+}
+
+---
+
+POST /api/diary/confirm
+
+Stores final diary.
+
+---
+
+GET /api/diary/:date
+
+Returns diary.
+
+---
+
+## Query / RAG
+
+POST /api/query
+
+Input:
+
+{
+"question": "What did I promise Mom?"
+}
+
+Pipeline:
+
+Question
+↓
+Embedding
+↓
+Vector Search
+↓
+Relevant Memories
+↓
+LLM
+↓
+Answer
+
+Output:
+
+{
+"answer": "You promised Mom..."
+}
+
+---
+
+## Analytics
+
+GET /api/analytics/daily
+
+GET /api/analytics/weekly
+
+GET /api/analytics/monthly
+
+Returns:
+
+Time spent
+
+Completed tasks
+
+Productivity score
+
+Category breakdown
+
+Eisenhower matrix data
+# Growth Assistant - Complete Workflow
+
+## Daily Reflection Flow
+
+User opens app.
+
+AI asks:
+
+"How was your day?"
+
+User speaks.
+
+Audio
+↓
+Store Audio
+↓
+FastWhisper STT
+↓
+Transcript
+↓
+Store Transcript
+↓
+LangChain Extraction
+
+Extraction identifies:
+
+Tasks
+
+Projects
+
+People
+
+Promises
+
+Habits
+
+Mood
+
+Events
+
+↓
+Store extracted_events
+
+↓
+
+Todo Generator
+
+Creates suggested tasks.
+
+↓
+
+User confirms.
+
+↓
+
+Store todos.
+
+---
+
+## 30-Minute Tracking
+
+Throughout day:
+
+Every 30 minutes user logs activity.
+
+Example:
+
+Study
+
+Gym
+
+Instagram
+
+Coding
+
+Meeting
+
+↓
+
+Store in time_blocks.
+
+---
+
+## Diary Generation
+
+At night:
+
+Diary Generator reads:
+
+Today's transcripts
+
+Today's tasks
+
+Today's time blocks
+
+Today's extracted events
+
+↓
+
+AI generates diary.
+
+↓
+
+User reviews.
+
+↓
+
+Store diary.
+
+---
+
+## Memory System
+
+Every transcript, event, todo and diary is converted into embeddings.
+
+↓
+
+Stored in memories table.
+
+↓
+
+Personal memory database is created automatically.
+
+---
+
+## Personal Query System
+
+User asks:
+
+"What did I promise Disha?"
+
+Audio
+↓
+STT
+↓
+Question
+↓
+RAG Retrieval
+↓
+Relevant memories
+↓
+LLM
+↓
+Answer
+↓
+TTS
+↓
+Audio Response
+
+---
+
+## Visualizations
+
+The dashboard shows:
+
+Daily timeline
+
+Weekly productivity
+
+Monthly productivity
+
+Task completion rate
+
+Time spent by category
+
+Study hours
+
+Fitness hours
+
+Entertainment hours
+
+Eisenhower Matrix
+
+Habit consistency
+
+Diary history
+
+Project progress
+
+Goal completion
+
+---
+
+Final Product Vision:
+
+A voice-first personal continuity assistant that automatically remembers conversations, extracts commitments, creates todos, generates diaries, tracks time usage, and acts as a searchable second brain for personal growth.

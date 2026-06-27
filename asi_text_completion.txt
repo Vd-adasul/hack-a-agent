@@ -1,0 +1,108 @@
+Here are the key takeaways from the API documentation you shared: 
+
+### Endpoint
+
+* **POST** `https://api.asi1.ai/v1/chat/completions`
+
+### Required Headers
+
+* `Authorization: Bearer <api_key>`
+* `Content-Type: application/json`
+
+### Optional Header
+
+* `x-session-id` — needed for agentic models if you want to persist a session across requests.
+
+### Minimum Request Body
+
+```json
+{
+  "model": "asi1",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello"
+    }
+  ]
+}
+```
+
+### Common Parameters
+
+* `model` (required)
+* `messages` (required)
+* `max_tokens`
+* `temperature`
+* `stream`
+* `web_search`
+* `tools`
+* `planner_mode`
+* `study_mode`
+
+### Message Format
+
+```json
+{
+  "role": "user",
+  "content": "What are you capable of?"
+}
+```
+
+### Successful Response Contains
+
+* `choices` → generated response(s)
+* `usage` → token counts
+
+  * `prompt_tokens`
+  * `completion_tokens`
+  * `total_tokens`
+* `id` → completion ID
+
+### Example Response Content
+
+```json
+{
+  "choices": [
+    {
+      "message": {
+        "content": "I am capable of..."
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 100,
+    "completion_tokens": 200,
+    "total_tokens": 300
+  }
+}
+```
+
+### Error Codes
+
+* **400** – Bad request / rate limit exceeded
+* **404** – Model not found
+* **500** – Internal server error
+
+### Basic Python Example
+
+```python
+import requests
+
+response = requests.post(
+    "https://api.asi1.ai/v1/chat/completions",
+    headers={
+        "Authorization": "Bearer YOUR_API_KEY",
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "asi1",
+        "messages": [
+            {"role": "user", "content": "Hello"}
+        ]
+    }
+)
+
+print(response.json())
+```
+
+If you're implementing this API, these are essentially the only pieces you need to get started. 

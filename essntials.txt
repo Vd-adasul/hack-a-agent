@@ -1,0 +1,50 @@
+**ASI1 API Essentials**
+
+* ASI1 is OpenAI API compatible. Just swap:
+
+  * `base_url = https://api.asi1.ai/v1`
+  * `model = "asi1"`
+* Works with OpenAI SDK, LangChain, and existing OpenAI tooling.
+
+**Agentic Features**
+
+* ASI1 can autonomously use agents from Agentverse to complete tasks.
+* Use an `x-session-id` header (UUID) and keep it consistent across a conversation for memory/context.
+* Some tasks are asynchronous; you may need to poll for updates.
+
+**Extra Parameters**
+
+* `web_search: true/false`
+* `x-session-id` header for persistence
+* Supports tool/function calling similar to OpenAI.
+
+**Structured Output**
+
+* Supports OpenAI-style `response_format` with JSON Schema.
+* Use:
+
+  * `strict: true`
+  * `additionalProperties: false`
+  * Define all required fields.
+* Also works with LangChain `with_structured_output()`.
+
+**Tool Calling**
+
+* Same general flow as OpenAI:
+
+  1. Send tool definitions.
+  2. Model returns tool calls.
+  3. Execute tool.
+  4. Send result back as a `tool` message.
+  5. Get final answer.
+* Preserve `tool_call_id`.
+* Tool results must be JSON-stringified.
+* Enable `strict: true` for reliable schemas.
+
+**Response Extras**
+Besides normal OpenAI fields, ASI1 may return:
+
+* `thought`
+* `intermediate_steps`
+* `executable_data`
+  for reasoning traces and agent execution details.

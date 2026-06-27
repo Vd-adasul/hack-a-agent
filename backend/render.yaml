@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: personal-continuity-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: ASI_ONE_API_KEY
+        sync: false
+      - key: ASI_BASE_URL
+        value: https://api.asi1.ai/v1
+      - key: ASI_MODEL
+        value: asi1
