@@ -23,33 +23,34 @@ export function Dashboard({ token, todos, timeBlocks, dailyStats, onReflectionCl
 
   return (
     <section className="page dashboard">
-      <div className="dashboard-grid">
-        {/* Left: Mini Calendar */}
-        <div className="dashboard-sidebar">
-          <MiniCalendar />
+      {/* Left: Mini Calendar */}
+      <div className="dashboard-sidebar">
+        <MiniCalendar />
+      </div>
+
+      {/* Right: Daily Overview */}
+      <div className="dashboard-main">
+        {/* Quick Reflection Entry */}
+        <div className="quick-reflection-card">
+          <div className="card-header">
+            <h3>Quick Reflection</h3>
+          </div>
+          <div className="reflection-actions">
+            <button className="primary" onClick={onReflectionClick}>
+              <Mic size={18} />
+              Record Reflection
+            </button>
+            <button className="secondary">
+              <Sparkles size={18} />
+              AI Suggestions
+            </button>
+          </div>
         </div>
 
-        {/* Right: Daily Overview */}
-        <div className="dashboard-main">
-          {/* Quick Reflection Entry */}
-          <div className="quick-reflection-card">
-            <div className="card-header">
-              <h3>Quick Reflection</h3>
-            </div>
-            <div className="reflection-actions">
-              <button className="primary" onClick={onReflectionClick}>
-                <Mic size={18} />
-                Record Reflection
-              </button>
-              <button className="secondary">
-                <Sparkles size={18} />
-                AI Suggestions
-              </button>
-            </div>
-          </div>
-
+        {/* Priorities and Schedule side-by-side */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px" }}>
           {/* Today's Priorities */}
-          <div className="dashboard-card">
+          <div className="dashboard-card" style={{ height: "100%" }}>
             <div className="card-header">
               <h3>Today's Priorities</h3>
               <span className="badge">{todayHighPriority.length}</span>
@@ -70,7 +71,7 @@ export function Dashboard({ token, todos, timeBlocks, dailyStats, onReflectionCl
           </div>
 
           {/* Today's Schedule */}
-          <div className="dashboard-card">
+          <div className="dashboard-card" style={{ height: "100%" }}>
             <div className="card-header">
               <h3>Scheduled Today</h3>
               <span className="badge">{todayScheduled.length}</span>
@@ -88,21 +89,21 @@ export function Dashboard({ token, todos, timeBlocks, dailyStats, onReflectionCl
               </div>
             )}
           </div>
+        </div>
 
-          {/* Daily Stats */}
-          <div className="dashboard-stats">
-            <div className="stat-item">
-              <div className="stat-value">{dailyStats?.trackedMinutes || 0}</div>
-              <div className="stat-label">Minutes Tracked</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">{completionRate}%</div>
-              <div className="stat-label">Completion Rate</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">{completedTodosCount}/{todos.length}</div>
-              <div className="stat-label">Tasks Done</div>
-            </div>
+        {/* Daily Stats */}
+        <div className="dashboard-stats">
+          <div className="stat-item">
+            <div className="stat-value">{dailyStats?.trackedMinutes || 0}</div>
+            <div className="stat-label">Minutes Tracked</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">{completionRate}%</div>
+            <div className="stat-label">Completion Rate</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">{completedTodosCount}/{todos.length}</div>
+            <div className="stat-label">Tasks Done</div>
           </div>
         </div>
       </div>
