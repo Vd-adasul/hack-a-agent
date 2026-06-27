@@ -1,6 +1,6 @@
 import React from "react";
-import { Sidebar } from "./Sidebar";
-import { Header } from "./Header";
+import { Sidebar } from "./Sidebar.jsx";
+import { Header } from "./Header.jsx";
 
 export function Layout({ activePage, onPageChange, user, onLogout, children, status }) {
   return (

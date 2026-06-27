@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Plus, CheckCircle2, Sparkles } from "lucide-react";
-import { TaskCard } from "../components/TaskCard";
+import { TaskCard } from "../components/TaskCard.jsx";
 
 export function Tasks({
   todos,

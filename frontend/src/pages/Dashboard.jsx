@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Mic, Sparkles, CheckCircle2, Clock, TrendingUp } from "lucide-react";
-import { MiniCalendar } from "../components/MiniCalendar";
+import { MiniCalendar } from "../components/MiniCalendar.jsx";
 import { useDateContext } from "../hooks/useDateContext.jsx";
 import { useApi } from "../hooks/useApi.jsx";
 import { request } from "../utils/api";
