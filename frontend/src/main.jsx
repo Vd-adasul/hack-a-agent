@@ -303,8 +303,8 @@ function AppContent() {
     return slots;
   }, []);
 
-  const addTimelineBlock = async (startTime, endTime) => {
-    if (!quickAdd.activity.trim()) return;
+  const addTimelineBlock = async (blockData) => {
+    if (!blockData.activity.trim()) return;
     setStatus("Saving time block...");
     try {
       await request("/api/timeblocks", {
@@ -312,16 +312,14 @@ function AppContent() {
         method: "POST",
         body: {
           blockDate: activeDate,
-          startTime,
-          endTime,
-          activity: quickAdd.activity.trim(),
-          category: quickAdd.category || "General",
-          importance: quickAdd.important ? "high" : "low",
-          urgency: quickAdd.urgent ? "high" : "low"
+          startTime: blockData.startTime,
+          endTime: blockData.endTime,
+          activity: blockData.activity.trim(),
+          category: blockData.category || "General",
+          importance: blockData.importance || "low",
+          urgency: blockData.urgency || "low"
         }
       });
-      setQuickAdd({ activity: "", category: "General", urgent: false, important: false });
-      setEditingSlot(null);
       await loadCore(activeDate);
       setStatus("Time block saved.");
     } catch (err) {
@@ -329,8 +327,23 @@ function AppContent() {
     }
   };
 
-  const deleteTimelineBlock = async (id) => {
-    if (!confirm("Delete this time block?")) return;
+  const updateTimelineBlock = async (id, blockData) => {
+    setStatus("Updating time block...");
+    try {
+      await request(`/api/timeblocks/${id}`, {
+        ...authHeaders,
+        method: "PATCH",
+        body: blockData
+      });
+      await loadCore(activeDate);
+      setStatus("Time block updated.");
+    } catch (err) {
+      setStatus(err.message);
+    }
+  };
+
+  const deleteTimelineBlock = async (id, skipConfirm = false) => {
+    if (!skipConfirm && !confirm("Delete this time block?")) return;
     try {
       await request(`/api/timeblocks/${id}`, { ...authHeaders, method: "DELETE" });
       await loadCore(activeDate);
@@ -458,8 +471,10 @@ function AppContent() {
       {activePage === "schedule" && (
         <Schedule
           timeBlocks={timeBlocks}
+          timelineSlots={timelineSlots}
           onDeleteBlock={deleteTimelineBlock}
           onAddBlock={addTimelineBlock}
+          onUpdateBlock={updateTimelineBlock}
           eisenhowerStats={eisenhowerStats}
         />
       )}
