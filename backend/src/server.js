@@ -301,6 +301,20 @@ app.get("/api/timeblocks/week", requireAuth, asyncRoute(async (req, res) => {
   res.json({ timeBlocks });
 }));
 
+app.patch("/api/timeblocks/:id", requireAuth, asyncRoute(async (req, res) => {
+  const allowed = ["activity", "category", "importance", "urgency", "startTime", "endTime"];
+  const patch = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowed.includes(key)));
+  const timeBlock = await TimeBlock.findOneAndUpdate({ _id: req.params.id, userId: req.user.id }, patch, { new: true });
+  if (!timeBlock) return res.status(404).json({ message: "Time block not found." });
+  res.json({ timeBlock });
+}));
+
+app.delete("/api/timeblocks/:id", requireAuth, asyncRoute(async (req, res) => {
+  const timeBlock = await TimeBlock.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+  if (!timeBlock) return res.status(404).json({ message: "Time block not found." });
+  res.json({ ok: true });
+}));
+
 app.post("/api/diary/generate", requireAuth, asyncRoute(async (req, res) => {
   const diaryDate = req.body.date || new Date().toISOString().slice(0, 10);
   const { start, end } = dateRange(diaryDate);
