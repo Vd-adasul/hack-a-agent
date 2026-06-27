@@ -38,6 +38,24 @@ button:disabled {
   opacity: 0.5;
 }
 
+.file-button {
+  align-items: center;
+  border: 1px solid #cfd8d3;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: row;
+  font-weight: 500;
+  gap: 8px;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.file-button input {
+  display: none;
+}
+
 input,
 textarea,
 select {
@@ -100,8 +118,29 @@ h3 {
 
 .app-shell {
   margin: 0 auto;
-  max-width: 1180px;
+  max-width: 920px;
   padding: 28px;
+}
+
+.app-nav {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(5, 1fr);
+  margin-bottom: 18px;
+}
+
+.app-nav button {
+  background: transparent;
+}
+
+.app-nav button.active {
+  background: #216b4f;
+  border-color: #216b4f;
+  color: #ffffff;
+}
+
+.page {
+  min-height: 420px;
 }
 
 header {
@@ -243,5 +282,9 @@ header {
 
   .stats {
     grid-template-columns: 1fr;
+  }
+
+  .app-nav {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

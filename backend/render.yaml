@@ -20,3 +20,13 @@ services:
         value: https://api.asi1.ai/v1
       - key: ASI_MODEL
         value: asi1
+      - key: GROQ_API_KEY
+        sync: false
+      - key: STT_MODEL
+        value: whisper-large-v3-turbo
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: TTS_MODEL
+        value: gemini-2.5-flash-preview-tts
+      - key: TTS_VOICE
+        value: Kore

@@ -3,5 +3,7 @@ dist
 .env
 .env.local
 npm-debug.log*
+*.log
+voice-smoke.*
 keys.txt
 *.ipynb

@@ -6,6 +6,7 @@ require("dotenv").config();
 const { connectDb } = require("./services/db");
 const { requireAuth } = require("./services/auth");
 const { askAsi, askAsiJson } = require("./services/asi");
+const { transcribeAudio, synthesizeSpeech } = require("./services/voice");
 const {
   User,
   AudioFile,
@@ -94,6 +95,23 @@ app.post("/api/audio/upload", requireAuth, upload.single("audio"), asyncRoute(as
   });
 
   res.status(201).json({ audio });
+}));
+
+app.post("/api/audio/transcribe", requireAuth, upload.single("audio"), asyncRoute(async (req, res) => {
+  const text = await transcribeAudio(req.file);
+  const transcript = await Transcript.create({
+    userId: req.user.id,
+    transcriptText: text.trim()
+  });
+  await addMemory({ userId: req.user.id, memoryText: transcript.transcriptText, sourceType: "transcript", sourceId: transcript.id });
+  res.status(201).json({ transcript, text: transcript.transcriptText });
+}));
+
+app.post("/api/audio/tts", requireAuth, asyncRoute(async (req, res) => {
+  const audio = await synthesizeSpeech(req.body.text);
+  res.setHeader("Content-Type", audio.contentType);
+  res.setHeader("Cache-Control", "no-store");
+  res.send(audio.buffer);
 }));
 
 app.post("/api/transcripts", requireAuth, asyncRoute(async (req, res) => {

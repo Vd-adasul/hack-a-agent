@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Brain, CalendarDays, CheckCircle2, Clock, LogOut, MessageSquareText, Plus, Sparkles } from "lucide-react";
+import { Brain, CalendarDays, CheckCircle2, Clock, LogOut, MessageSquareText, Mic, Plus, Sparkles, Square, Volume2 } from "lucide-react";
 import "./styles.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -77,6 +77,8 @@ function App() {
   const [todos, setTodos] = useState([]);
   const [transcripts, setTranscripts] = useState([]);
   const [transcriptText, setTranscriptText] = useState("");
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
   const [activeTranscriptId, setActiveTranscriptId] = useState("");
   const [suggestedTodos, setSuggestedTodos] = useState([]);
   const [events, setEvents] = useState([]);
@@ -87,6 +89,7 @@ function App() {
   const [answer, setAnswer] = useState("");
   const [dailyStats, setDailyStats] = useState(null);
   const [status, setStatus] = useState("");
+  const [activePage, setActivePage] = useState("reflect");
 
   const authHeaders = useMemo(() => ({ token }), [token]);
 
@@ -132,6 +135,54 @@ function App() {
     setActiveTranscriptId(data.transcript._id);
     await loadCore();
     setStatus("Transcript saved.");
+  };
+
+  const transcribeBlob = async (blob, filename = "reflection.webm") => {
+    setStatus("Transcribing audio...");
+    const formData = new FormData();
+    formData.append("audio", blob, filename);
+    const response = await fetch(`${API_URL}/api/audio/transcribe`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Transcription failed");
+    setTranscriptText(data.text);
+    setActiveTranscriptId(data.transcript._id);
+    await loadCore();
+    setStatus("Audio transcribed and saved.");
+  };
+
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream);
+    const chunks = [];
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.push(event.data);
+    };
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((track) => track.stop());
+      await transcribeBlob(new Blob(chunks, { type: "audio/webm" }));
+    };
+    recorder.start();
+    setMediaRecorder(recorder);
+    setRecording(true);
+    setStatus("Recording...");
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
+    setRecording(false);
+  };
+
+  const uploadAudio = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await transcribeBlob(file, file.name);
+    event.target.value = "";
   };
 
   const extractEvents = async () => {
@@ -187,6 +238,36 @@ function App() {
     setStatus("Answer ready.");
   };
 
+  const speakAnswer = async () => {
+    if (!answer) return;
+    setStatus("Generating speech...");
+    try {
+      const response = await fetch(`${API_URL}/api/audio/tts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ text: answer })
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || "Text-to-speech failed");
+      }
+      const blob = await response.blob();
+      new Audio(URL.createObjectURL(blob)).play();
+      setStatus("Playing answer.");
+    } catch (error) {
+      if ("speechSynthesis" in window) {
+        speechSynthesis.cancel();
+        speechSynthesis.speak(new SpeechSynthesisUtterance(answer));
+        setStatus("Playing answer with browser speech.");
+      } else {
+        setStatus(error.message);
+      }
+    }
+  };
+
   if (!token) return <AuthScreen onAuth={onAuth} />;
 
   return (
@@ -199,12 +280,32 @@ function App() {
         <button className="ghost" onClick={logout}><LogOut size={16} /> Logout</button>
       </header>
 
+      <nav className="app-nav" aria-label="Main navigation">
+        <button className={activePage === "reflect" ? "active" : ""} onClick={() => setActivePage("reflect")}><MessageSquareText size={17} /> Reflect</button>
+        <button className={activePage === "todos" ? "active" : ""} onClick={() => setActivePage("todos")}><CheckCircle2 size={17} /> Todos</button>
+        <button className={activePage === "schedule" ? "active" : ""} onClick={() => setActivePage("schedule")}><Clock size={17} /> Schedule</button>
+        <button className={activePage === "diary" ? "active" : ""} onClick={() => setActivePage("diary")}><CalendarDays size={17} /> Diary</button>
+        <button className={activePage === "memory" ? "active" : ""} onClick={() => setActivePage("memory")}><Brain size={17} /> Memory</button>
+      </nav>
+
       {status && <p className="status">{status}</p>}
 
-      <section className="grid two">
-        <div className="panel">
+      {activePage === "reflect" && (
+        <section className="page panel">
           <h2><MessageSquareText size={20} /> Daily reflection</h2>
+          <p className="muted">Record, upload, or type one reflection at a time.</p>
           <textarea value={transcriptText} onChange={(event) => setTranscriptText(event.target.value)} placeholder="Paste or type today's voice transcript..." />
+          <div className="actions">
+            <button type="button" onClick={recording ? stopRecording : startRecording}>
+              {recording ? <Square size={16} /> : <Mic size={16} />}
+              {recording ? "Stop" : "Record"}
+            </button>
+            <label className="file-button">
+              <Mic size={16} />
+              Upload audio
+              <input type="file" accept="audio/*" onChange={uploadAudio} />
+            </label>
+          </div>
           <div className="actions">
             <button className="primary" disabled={!transcriptText.trim()} onClick={saveTranscript}><Plus size={16} /> Save</button>
             <select value={activeTranscriptId} onChange={(event) => setActiveTranscriptId(event.target.value)}>
@@ -217,10 +318,13 @@ function App() {
             <button disabled={!activeTranscriptId} onClick={generateTodos}><CheckCircle2 size={16} /> Suggest todos</button>
           </div>
           <List title="Extracted events" items={events.map((event) => `${event.eventType}: ${event.content}`)} />
-        </div>
+        </section>
+      )}
 
-        <div className="panel">
+      {activePage === "todos" && (
+        <section className="page panel">
           <h2><CheckCircle2 size={20} /> Todos</h2>
+          <p className="muted">Review AI suggestions and track confirmed commitments.</p>
           {suggestedTodos.length > 0 && (
             <div className="suggestions">
               <List title="Suggestions" items={suggestedTodos.map((todo) => `${todo.title} (${todo.priority})`)} />
@@ -236,12 +340,13 @@ function App() {
               </label>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <section className="grid two">
-        <div className="panel">
+      {activePage === "schedule" && (
+        <section className="page panel">
           <h2><Clock size={20} /> Time blocks</h2>
+          <p className="muted">Plan focused blocks for the selected day.</p>
           <form className="time-form" onSubmit={addTimeBlock}>
             <input type="date" value={timeForm.blockDate} onChange={(event) => setTimeForm({ ...timeForm, blockDate: event.target.value })} />
             <input type="time" value={timeForm.startTime} onChange={(event) => setTimeForm({ ...timeForm, startTime: event.target.value })} />
@@ -251,9 +356,11 @@ function App() {
             <button className="primary"><Plus size={16} /> Add</button>
           </form>
           <List title="Today" items={timeBlocks.map((block) => `${block.startTime}-${block.endTime} ${block.activity}`)} />
-        </div>
+        </section>
+      )}
 
-        <div className="panel">
+      {activePage === "diary" && (
+        <section className="page panel">
           <h2><CalendarDays size={20} /> Diary and stats</h2>
           <div className="stats">
             <span>{dailyStats?.trackedMinutes || 0} min tracked</span>
@@ -265,17 +372,21 @@ function App() {
             <button onClick={generateDiary}><Sparkles size={16} /> Generate</button>
             <button className="primary" disabled={!diary.trim()} onClick={confirmDiary}>Confirm diary</button>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <section className="panel">
+      {activePage === "memory" && (
+      <section className="page panel">
         <h2><Brain size={20} /> Memory query</h2>
+        <p className="muted">Ask questions grounded in your saved reflections.</p>
         <div className="query-row">
           <input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="What did I promise Mom?" />
           <button className="primary" disabled={!question.trim()} onClick={askMemory}>Ask</button>
+          <button disabled={!answer} onClick={speakAnswer}><Volume2 size={16} /> Speak</button>
         </div>
         {answer && <p className="answer">{answer}</p>}
       </section>
+      )}
     </main>
   );
 }

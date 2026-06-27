@@ -14,6 +14,12 @@ ASI1 is used for:
 - Answering memory questions from stored personal context.
 - Producing weekly growth reports.
 
+Speech-to-text and text-to-speech are also included:
+
+- STT uses Groq's OpenAI-compatible Whisper transcription endpoint.
+- TTS uses Gemini's native audio generation API.
+- Browser speech synthesis is used as a frontend fallback if hosted TTS is unavailable.
+
 The backend calls ASI1 through its OpenAI-compatible chat completions API:
 
 - Base URL: `https://api.asi1.ai/v1`
@@ -45,6 +51,8 @@ Personal Continuity Assistant is a lightweight second brain for daily life. A us
 - JWT authentication
 - bcrypt password hashing
 - Multer for future audio upload support
+- Groq Whisper transcription for speech-to-text
+- Gemini native TTS for generated speech
 - ASI1 chat completions API
 
 ### Frontend
@@ -87,7 +95,29 @@ Users can register, log in, and access protected routes through JWT bearer token
 
 ### Reflection and Transcript Storage
 
-The app stores daily transcript text. Audio upload metadata support is also present, so object storage and speech-to-text can be added later without changing the main data model.
+The app stores daily transcript text. Users can either type/paste a reflection, record directly in the browser, or upload an audio file. Uploaded or recorded audio is sent to the backend, transcribed with Groq Whisper, saved as a transcript, and then used by the ASI1 workflows.
+
+### Speech-to-Text
+
+The notebook prototype used `faster-whisper` locally. For deployment compatibility on Render, the production backend uses Groq's hosted Whisper endpoint:
+
+- Endpoint: `https://api.groq.com/openai/v1/audio/transcriptions`
+- Env var: `GROQ_API_KEY`
+- Default model: `whisper-large-v3-turbo`
+- Backend route: `POST /api/audio/transcribe`
+
+This keeps the hosted backend lightweight while preserving the Whisper-based STT idea from the prototype.
+
+### Text-to-Speech
+
+The notebook prototype used Piper locally. For deployment compatibility, the backend uses Gemini native audio generation for TTS:
+
+- Env var: `GOOGLE_API_KEY`
+- Endpoint: Gemini `generateContent` audio API
+- Model: `gemini-2.5-flash-preview-tts`
+- Backend route: `POST /api/audio/tts`
+
+The frontend also falls back to the browser's built-in `speechSynthesis` API if hosted TTS fails during a demo.
 
 ### ASI1 Event Extraction
 
@@ -141,6 +171,8 @@ The backend exposes daily, weekly, and monthly analytics routes for:
 ### Transcripts and Audio
 
 - `POST /api/audio/upload`
+- `POST /api/audio/transcribe`
+- `POST /api/audio/tts`
 - `POST /api/transcripts`
 - `GET /api/transcripts`
 
@@ -197,6 +229,11 @@ CLIENT_ORIGIN=http://localhost:5173
 ASI_ONE_API_KEY=your-asi-one-key
 ASI_BASE_URL=https://api.asi1.ai/v1
 ASI_MODEL=asi1
+GROQ_API_KEY=your-groq-key
+STT_MODEL=whisper-large-v3-turbo
+GOOGLE_API_KEY=your-google-api-key
+TTS_MODEL=gemini-2.5-flash-preview-tts
+TTS_VOICE=Kore
 ```
 
 ### Frontend
@@ -230,6 +267,11 @@ VITE_API_URL=http://localhost:4000
    - `ASI_ONE_API_KEY`
    - `ASI_BASE_URL=https://api.asi1.ai/v1`
    - `ASI_MODEL=asi1`
+   - `GROQ_API_KEY`
+   - `STT_MODEL=whisper-large-v3-turbo`
+   - `GOOGLE_API_KEY`
+   - `TTS_MODEL=gemini-2.5-flash-preview-tts`
+   - `TTS_VOICE=Kore`
 5. Set `CLIENT_ORIGIN` to the deployed Vercel frontend URL.
 
 ### Vercel Frontend
@@ -253,6 +295,33 @@ It centralizes:
 - JSON Schema generations through `askAsiJson`.
 
 Structured extraction and todo generation use strict schemas so the backend can safely store AI outputs without fragile text parsing.
+
+## Voice Implementation Details
+
+The voice integration lives in `backend/src/services/voice.js`.
+
+It provides:
+
+- `transcribeAudio`: receives browser-recorded or uploaded audio and sends it to Groq Whisper.
+- `synthesizeSpeech`: sends generated text to Gemini TTS and wraps its PCM output as playable WAV audio.
+
+Voice flow:
+
+```text
+Microphone or audio upload
+↓
+POST /api/audio/transcribe
+↓
+Groq Whisper STT
+↓
+Transcript stored in MongoDB
+↓
+ASI1 extracts events, todos, diary, and answers
+↓
+POST /api/audio/tts
+↓
+Generated spoken response
+```
 
 ## Data Model
 
@@ -280,12 +349,15 @@ Verified routes:
 - Register
 - Current user
 - Transcript create/list
+- Groq Whisper audio transcription endpoint wiring
 - ASI1 event extraction
 - ASI1 todo generation
 - Todo confirmation/update
 - Time block creation
 - Daily analytics
 - ASI1 memory query
+- All 25 API routes, including authentication, ASI1 generation, CRUD, diary, analytics, and memory query
+- Gemini TTS to Groq Whisper STT audio round trip
 
 Frontend production build also passes with `npm run build`.
 
