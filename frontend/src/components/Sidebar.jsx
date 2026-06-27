@@ -31,7 +31,15 @@ export function Sidebar({ activePage, onPageChange, user, onLogout }) {
       {/* Sidebar */}
       <aside className={`sidebar ${isOpen ? "open" : ""}`}>
         <div className="sidebar-header">
-          <h2>PCA</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <h2 style={{ display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+              <Brain size={18} style={{ color: "var(--color-primary)" }} /> 
+              <span style={{ letterSpacing: "1.5px", fontWeight: "800" }}>CONTINUITY</span>
+            </h2>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "1px" }}>
+              PCA_TERMINAL // V1.0.4
+            </span>
+          </div>
           <button className="close-sidebar" onClick={() => setIsOpen(false)}>
             <X size={20} />
           </button>
@@ -54,8 +62,15 @@ export function Sidebar({ activePage, onPageChange, user, onLogout }) {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="user-info">
-            {user && <p className="user-name">{user.name}</p>}
+          <div className="user-info" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {user && (
+              <>
+                <p className="user-name">{user.name}</p>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "8px", color: "var(--text-muted)", textTransform: "uppercase" }}>
+                  ID: {user.id ? user.id.slice(0, 8) : "GUEST"}
+                </span>
+              </>
+            )}
           </div>
           <button className="nav-item" onClick={() => handlePageChange("settings")}>
             <Settings size={18} />

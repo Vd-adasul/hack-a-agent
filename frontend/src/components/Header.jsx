@@ -30,8 +30,13 @@ export function Header({ user }) {
     <header className="header">
       <div className="header-content">
         <div>
-          <p className="header-greeting">Welcome{user ? `, ${user.name}` : ""}</p>
-          <h1 className="header-title">{formattedDate}</h1>
+          <p className="header-greeting">Welcome{user ? `, ${user.name}` : ""} // SYS_STATUS: ACTIVE</p>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "12px", flexWrap: "wrap" }}>
+            <h1 className="header-title">{formattedDate}</h1>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
+              [{activeDate.replace(/-/g, ".")} // TIMECORE_OK]
+            </span>
+          </div>
         </div>
         <div className="header-controls">
           <button className="icon-button" onClick={handlePreviousDay} title="Previous day">
